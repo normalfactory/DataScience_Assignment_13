@@ -48,6 +48,15 @@ function createChart(sourceData){
 
     console.log("--> createChart: Started function");
 
+
+    var chartInfo = {
+        xColumnName: "poverty",
+        yColumnName: "healthcare",
+        xDisplayName: "Poverty",
+        yDisplayName: "Lacks Healthcare"
+    }
+
+
     //-- Prepare Chart Area
 
     //- Remove Existing Chart
@@ -86,15 +95,23 @@ function createChart(sourceData){
         .attr("transform", `translate(${chartMargin.left}, ${chartMargin.top})`);
 
 
+    //- Prepare Tool-Tip
+    let toolTip = d3.tip()
+        .attr("class", "d3-tip")
+        .offset([-8,0])
+        .html( d => {
+            return `<h6>${d.state}</h6>${chartInfo.xDisplayName}: ${d[chartInfo.xColumnName]}%<br/>` +
+                `${chartInfo.yDisplayName}: ${d[chartInfo.yColumnName]}%`;
+        });
+
+    svgContainer.call(toolTip);
+
+
+
     //-- Create Chart
-
-    let xColumnName = "poverty";
-    let yColumnName = "healthcare";
-
-
     //- Prepare X
     let xScale = d3.scaleLinear()
-        .domain([d3.min(sourceData, d => d[xColumnName]) - 0.5, d3.max(sourceData, d => d[xColumnName])])
+        .domain([d3.min(sourceData, d => d[chartInfo.xColumnName]) - 0.5, d3.max(sourceData, d => d[chartInfo.xColumnName])])
         .range([0, chartWidth]);
 
     let xAxis = d3.axisBottom(xScale);
@@ -102,7 +119,7 @@ function createChart(sourceData){
 
     //- Prepare Y
     let yScale = d3.scaleLinear()
-        .domain([d3.min(sourceData, d => d[yColumnName]) -0.5, d3.max(sourceData, d => d[yColumnName])])
+        .domain([d3.min(sourceData, d => d[chartInfo.yColumnName]) -0.5, d3.max(sourceData, d => d[chartInfo.yColumnName])])
         .range([chartHeight, 0]);
     
     let yAxis = d3.axisLeft(yScale);
@@ -124,11 +141,23 @@ function createChart(sourceData){
         .data(sourceData)
         .enter()
         .append("circle")
-        .attr("cx", d => xScale(d[xColumnName]))
-        .attr("cy", d => yScale(d[yColumnName]))
+        .attr("cx", d => xScale(d[chartInfo.xColumnName]))
+        .attr("cy", d => yScale(d[chartInfo.yColumnName]))
         .attr("r", "12")
-        .attr("fill", circleColor)
-        .attr("opacity", "0.9")
+        .attr("class", "stateCircle")
+        .on("mouseover", toolTip.show)
+        .on("mouseout", toolTip.hide);
+
+
+        // .attr("fill", circleColor)
+        // .attr("opacity", "0.9")
+
+        // .on("mouseover", function(d) {
+        //     d3.select(this).attr("fill", "red");
+        //     toolTip.show(this);
+        // })
+
+        // .on("mouseover", toolTip.show)
 
 
     //- Create Labels
@@ -136,18 +165,64 @@ function createChart(sourceData){
     //  axis text that results in a number of labels not being displaced
     let svgLabelGroup = svgChartGroup.append("g");
 
-    var textMarkerGroup = svgLabelGroup.selectAll("text")
+    let textMarkerGroup = svgLabelGroup.selectAll("text")
         .data(sourceData)
         .enter()
         .append("text")
-        .attr("x", d => xScale(d[xColumnName]) - 6.8 )
-        .attr("y", d => yScale(d[yColumnName]) + 3.5)
-        .text(d => d.abbr)
-        .attr("font-family", "sans-serif")
-        .attr("font-size", "10px")
-        .attr("fill", "white");
+        .attr("x", d => xScale(d[chartInfo.xColumnName]) - 0 )
+        .attr("y", d => yScale(d[chartInfo.yColumnName]) + 4)
+        .attr("class", "stateText")
+        .text(d => d.abbr);
+        
+        // .attr("font-family", "sans-serif")
+        // .attr("font-size", "10px")
+        // .attr("fill", "white");
 
+
+    //- Create Axis Labels
+    let svgAxisLabelGroup = svgChartGroup.append("g");
+    
+    svgAxisLabelGroup.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - chartMargin.left + 35)
+        .attr("x", 0 - (chartHeight / 2))
+        .attr("class", "aText active")
+        .text("Lacks Healthcare(%)");
+
+
+    svgAxisLabelGroup.append("text")
+        .attr("transform", `translate(${chartWidth / 2}, ${chartHeight + chartMargin.top - 25})`)
+        .attr("class", "aText active")
+        .text("In Poverty (%)");
 }
+
+
+
+// chartGroup.selectAll("circle")
+//   .transition()
+//   .duration(1000)
+//   .attr("cx", (d, i) => xScale(i))
+//   .attr("cy", d => yScale(d));
+
+
+/*
+
+1 Create Chart
+ -> include labels that are clickable
+
+2 Update Chart
+ -> based on click event, use transition
+ - pass in object used with labels/x/y
+
+
+
+*/
+
+
+
+
+
+
 
 
 function makeResponsive(){
@@ -229,6 +304,3 @@ d3.csv("assets/data/data.csv").then(function(chartData) {
 
 //- Setup Responsive Chart
 d3.select(window).on("resize", makeResponsive);
-
-
-
