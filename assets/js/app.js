@@ -1,19 +1,15 @@
-/*
-
+/* Creates scatter plot chart using D3. The user has the ability to change the x and y axis.
+Use of global variables to keep track of user selection to allow for responsive layout where when 
+the window is resized the chart is removed and then created again.
 
 Scott McEachern
 May 13, 2019
-
-
-- Responsive
-
 */
-
 
 console.log("--> app.js: Started initialization of application");
 
 
-//- Prepare Globals
+//- Constants
 const CHARTDIVNAME = "#scatter";
 
 const YAXISINACTIVECLASS = "aText inactive yAxis";  // class attribute for the SVG Y axis text elements that are not active
@@ -31,9 +27,18 @@ const _chartMargin = {      // Margins to use to place the chart within the SVG 
     left : 80
 };
 
+
+//- Prepare Globals
 var _sourceChartData = null;    // census data from API used with charts; set when returned from API
 
 var _chartDivWidth = 0; // width of the div that contains the chart SVG; set when chart is created
+
+var _activeChart = {        // information on the currently selected chart; updated when the user changes selection
+    xDisplayName : "In Poverty (%)",
+    xColumnName : "poverty",
+    yDisplayName : "Lack Healthcare (%)",
+    yColumnName : "healthcare"
+};
 
 
 
@@ -85,12 +90,12 @@ function createChart(sourceData){
     console.log("--> createChart: Started function");
 
 
-    var chartInfo = {
-        xColumnName: "poverty",
-        yColumnName: "healthcare",
-        xDisplayName: "Poverty",
-        yDisplayName: "Lacks Healthcare"
-    }
+    // var chartInfo = {
+    //     xColumnName: "poverty",
+    //     yColumnName: "healthcare",
+    //     xDisplayName: "Poverty",
+    //     yDisplayName: "Lacks Healthcare"
+    // }
 
 
     //-- Prepare Chart Area
@@ -125,22 +130,15 @@ function createChart(sourceData){
 
 
     //- Prepare Tool-Tip
-    let toolTip = d3.tip()
-        .attr("class", "d3-tip")
-        .offset([-8,0])
-        .html( d => {
-            return `<h6>${d.state}</h6>${chartInfo.xDisplayName}: ${d[chartInfo.xColumnName]}%<br/>` +
-                `${chartInfo.yDisplayName}: ${d[chartInfo.yColumnName]}%`;
-        });
+    let toolTip = createToolTip();
 
     svgContainer.call(toolTip);
-
 
 
     //-- Create Chart
     //- Prepare X
     let xScale = d3.scaleLinear()
-        .domain([d3.min(sourceData, d => d[chartInfo.xColumnName]) - 0.5, d3.max(sourceData, d => d[chartInfo.xColumnName])])
+        .domain([d3.min(sourceData, d => d[_activeChart.xColumnName]) - 0.5, d3.max(sourceData, d => d[_activeChart.xColumnName])])
         .range([0, chartWidth]);
 
     let xAxis = d3.axisBottom(xScale);
@@ -148,7 +146,7 @@ function createChart(sourceData){
 
     //- Prepare Y
     let yScale = d3.scaleLinear()
-        .domain([d3.min(sourceData, d => d[chartInfo.yColumnName]) -0.5, d3.max(sourceData, d => d[chartInfo.yColumnName])])
+        .domain([d3.min(sourceData, d => d[_activeChart.yColumnName]) -0.5, d3.max(sourceData, d => d[_activeChart.yColumnName])])
         .range([chartHeight, 0]);
     
     let yAxis = d3.axisLeft(yScale);
@@ -169,8 +167,8 @@ function createChart(sourceData){
         .data(sourceData)
         .enter()
         .append("circle")
-        .attr("cx", d => xScale(d[chartInfo.xColumnName]))
-        .attr("cy", d => yScale(d[chartInfo.yColumnName]))
+        .attr("cx", d => xScale(d[_activeChart.xColumnName]))
+        .attr("cy", d => yScale(d[_activeChart.yColumnName]))
         .attr("r", "12")
         .attr("class", "stateCircle")
         .on("mouseover", toolTip.show)
@@ -186,10 +184,12 @@ function createChart(sourceData){
         .data(sourceData)
         .enter()
         .append("text")
-        .attr("x", d => xScale(d[chartInfo.xColumnName]) )
-        .attr("y", d => yScale(d[chartInfo.yColumnName]) + 4)
+        .attr("x", d => xScale(d[_activeChart.xColumnName]) )
+        .attr("y", d => yScale(d[_activeChart.yColumnName]) + 4)
         .attr("class", "stateText")
-        .text(d => d.abbr);
+        .text(d => d.abbr)
+        .on("mouseover", toolTip.show)
+        .on("mouseout", toolTip.hide);
 
 
     //-- Create Axis Labels
@@ -202,7 +202,7 @@ function createChart(sourceData){
         .attr("x", 0 - (chartHeight / 2))
         .attr("class", YAXISACTIVECLASS)
         .attr("id", "healthcare")
-        .text("Lacks Healthcare(%)")
+        .text("Lacks Healthcare (%)")
         .on("click", updateYAxisChartData);
 
     //- Y: Smokes
@@ -250,7 +250,55 @@ function createChart(sourceData){
         .text("Household Income (Median)")
         .on("click", updateXAxisChartData);
 
+}
 
+function createToolTip(){
+    /* Creates the d3.tip using metadata from the _activeChart
+
+    Accepts : nothing
+
+    Returns : (d3.tip) created using information from _activeChart
+    */
+
+    console.log("--> createToolTip");
+
+    return d3.tip()
+        .attr("class", "d3-tip")
+        .offset([-8,0])
+        .html(d => {
+            return `<h6>${d.state}</h6>${_activeChart.xDisplayName}: ${d[_activeChart.xColumnName]}%<br/>` +
+                         `${_activeChart.yDisplayName}: ${d[_activeChart.yColumnName]}%`;
+        });
+}
+
+
+function updateToolTip(){
+    /* Updates the tooltip that is to be used when the user changes the X or Y axis.
+    Assumption that the _activeChart has been previously updated.
+
+    Accepts : nothing
+
+    Returns : undefined
+    */
+
+    console.log("--> updateToolTip");
+
+
+    //- Create Tooltip with dataset
+    let toolTip = createToolTip();
+
+    //- Set with Circle
+    d3.selectAll("circle")
+        .on("mouseover", toolTip.show)
+        .on("mouseout", toolTip.hide);
+
+    //- Set with Labels
+    d3.selectAll(".stateText")
+        .on("mouseover", toolTip.show)
+        .on("mouseout", toolTip.hide);
+
+    //- Apply to SVG
+    d3.select("svg").call(toolTip);
 }
 
 
@@ -269,8 +317,28 @@ function updateXAxisChartData(){
 
    //-- Get Unique Identifer of data
    let dataId = this.id;
-
+   
    console.log(`Unique identifier of data: ${dataId}`)
+
+
+    //-- Update Active Chart
+    if (dataId == "age"){
+        _activeChart.xDisplayName = "Age (Median)";
+        _activeChart.xColumnName = dataId;
+    }
+    else if (dataId == "poverty"){
+        _activeChart.xDisplayName = "In Poverty (%)";
+        _activeChart.xColumnName = dataId;
+    }
+    else if (dataId == "income")
+    {
+        _activeChart.xDisplayName = "Household Income (Median)";
+        _activeChart.xColumnName = dataId;
+    }
+    else
+    {
+        throw(`Unable to update chart; invalid dataId: ${dataId}`);
+    }
 
 
     //-- Update Buttons
@@ -301,16 +369,23 @@ function updateXAxisChartData(){
         .transition(transitionDuration)
         .call(xAxis);
 
+
     //- Update Chart: Circles
     d3.selectAll("circle")
         .transition(transitionDuration)
         .attr("cx", d => xScale(d[dataId]));
 
+
     //- Update Chart: Labels
     d3.selectAll(".stateText")
         .transition(transitionDuration)
         .attr("x", d=> xScale(d[dataId]));
+
+
+    //-- Update Tool Tip
+    updateToolTip()
 }
+
 
 function updateYAxisChartData(){
     /* Updates the chart when user clicks button; the "this" object contains the text element that the user
@@ -330,6 +405,26 @@ function updateYAxisChartData(){
 
     console.log(`Unique identifier of data: ${dataId}`)
 
+
+
+    //-- Update Active Chart
+    if (dataId == "obesity"){
+        _activeChart.yDisplayName = "Obese (%)";
+        _activeChart.yColumnName = dataId;
+    }
+    else if (dataId == "smokes"){
+        _activeChart.yDisplayName = "Smokes (%)";
+        _activeChart.yColumnName = dataId;
+    }
+    else if (dataId == "healthcare")
+    {
+        _activeChart.yDisplayName = "Lacks Healthcare (%)";
+        _activeChart.yColumnName = dataId;
+    }
+    else
+    {
+        throw(`Unable to update chart; invalid dataId: ${dataId}`);
+    }
 
     //-- Update Buttons
 
@@ -371,6 +466,9 @@ function updateYAxisChartData(){
         .transition(transitionDuration)
         .attr("y", d=> yScale(d[dataId]) + 4);
     
+
+   //-- Update Tooltip
+   updateToolTip();
 }
 
 
@@ -381,6 +479,7 @@ function updateYAxisChartData(){
 
         // .on("mouseover", toolTip.show)
 
+        // d3.select(".d3-tip").html(d => {return "scott";})
 /*
 
 // 1 Create Chart
