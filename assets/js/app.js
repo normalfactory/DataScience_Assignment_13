@@ -62,6 +62,17 @@ function getSvgHeight(){
     return (window.innerHeight * 0.5);
 }
 
+function getTransitionDuration(){
+    /* Returns the transition duration to be used with the animation of the charts
+
+    Accepts : nothing
+
+    Returns : (transition)
+    */
+
+    return d3.transition().duration(500);
+}
+
 
 function createChart(sourceData){
     /*
@@ -145,6 +156,7 @@ function createChart(sourceData){
     //- Create X-Y Axis
     svgChartGroup.append("g")
         .attr("transform", `translate(0, ${chartHeight})`)
+        .attr("class", "xaxis")
         .call(xAxis);
 
     svgChartGroup.append("g")
@@ -243,8 +255,13 @@ function createChart(sourceData){
 
 
 function updateXAxisChartData(){
-    /*
+    /* Updates the chart when user clicks button; the "this" object contains the text element that the user
+    selected.  The ID of that element contains the unique identifier for the data to use.  Update the 
+    active/inactive state of the buttons and then updates the chart.
 
+    Accepts : nothing
+
+    Returns : undefined
     */
 
    console.log("--> updateXAxisChartData");
@@ -265,6 +282,34 @@ function updateXAxisChartData(){
     d3.select(`#${dataId}`).attr("class", XAXISACTIVECLASS);
 
 
+    //-- Update Chart
+
+    //- X-Axis
+    let chartWidth = (_chartDivWidth - _chartMargin.left - _chartMargin.right);
+
+    let xScale = d3.scaleLinear()
+        .domain([d3.min(_sourceChartData, d => d[dataId]) - 0.5, d3.max(_sourceChartData, d => d[dataId])])
+        .range([0, chartWidth]);
+
+    let xAxis = d3.axisBottom(xScale);
+
+
+    //- Update Chart: X-Axis
+    let transitionDuration = getTransitionDuration();
+
+    d3.select(".xaxis")
+        .transition(transitionDuration)
+        .call(xAxis);
+
+    //- Update Chart: Circles
+    d3.selectAll("circle")
+        .transition(transitionDuration)
+        .attr("cx", d => xScale(d[dataId]));
+
+    //- Update Chart: Labels
+    d3.selectAll(".stateText")
+        .transition(transitionDuration)
+        .attr("x", d=> xScale(d[dataId]));
 }
 
 function updateYAxisChartData(){
@@ -295,7 +340,7 @@ function updateYAxisChartData(){
     d3.select(`#${dataId}`).attr("class", YAXISACTIVECLASS);
 
 
-
+    //-- Update Chart
     //- Update Y-Axis
     let svgHeight = getSvgHeight();
     let chartHeight = (svgHeight - _chartMargin.top - _chartMargin.bottom);
@@ -308,7 +353,7 @@ function updateYAxisChartData(){
 
 
     //- Update Chart: Y-Axis
-    let transitionDuration = d3.transition().duration(500);
+    let transitionDuration = getTransitionDuration();
 
     d3.select(".yaxis")
         .transition(transitionDuration)
@@ -318,13 +363,13 @@ function updateYAxisChartData(){
     //- Update Chart: Circles
     d3.selectAll("circle")
         .transition(transitionDuration)
-        .attr("cy", d=> yScale(d[dataId]))
+        .attr("cy", d=> yScale(d[dataId]));
     
 
     //- Update Chart: Labels
     d3.selectAll(".stateText")
         .transition(transitionDuration)
-        .attr("y", d=> yScale(d[dataId]) + 4)
+        .attr("y", d=> yScale(d[dataId]) + 4);
     
 }
 
@@ -338,20 +383,19 @@ function updateYAxisChartData(){
 
 /*
 
-1 Create Chart
- -> include labels that are clickable
+// 1 Create Chart
+//  -> include labels that are clickable
 
-2 Update Chart
- -> based on click event, use transition
- - pass in object used with labels/x/y
+// 2 Update Chart
+//  -> based on click event, use transition
+//  - pass in object used with labels/x/y
 
+3 Update tool tip with the multiple axis
 
-
+4 responsive
+ - height
+ - keep selected axis; not return to default
 */
-
-
-
-
 
 
 
