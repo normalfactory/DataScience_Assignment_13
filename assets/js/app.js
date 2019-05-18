@@ -90,14 +90,6 @@ function createChart(sourceData){
     console.log("--> createChart: Started function");
 
 
-    // var chartInfo = {
-    //     xColumnName: "poverty",
-    //     yColumnName: "healthcare",
-    //     xDisplayName: "Poverty",
-    //     yDisplayName: "Lacks Healthcare"
-    // }
-
-
     //-- Prepare Chart Area
 
     //- Remove Existing Chart
@@ -200,7 +192,7 @@ function createChart(sourceData){
         .attr("transform", "rotate(-90)")
         .attr("y", 0 - _chartMargin.left + 55)
         .attr("x", 0 - (chartHeight / 2))
-        .attr("class", YAXISACTIVECLASS)
+        .attr("class", getYlabelGroupClass("healthcare"))
         .attr("id", "healthcare")
         .text("Lacks Healthcare (%)")
         .on("click", updateYAxisChartData);
@@ -210,7 +202,7 @@ function createChart(sourceData){
         .attr("transform", "rotate(-90)")
         .attr("y", 0 - _chartMargin.left + 35)
         .attr("x", 0 - (chartHeight / 2))
-        .attr("class", YAXISINACTIVECLASS)
+        .attr("class", getYlabelGroupClass("smokes"))
         .attr("id", "smokes")
         .text("Smokes (%)")
         .on("click", updateYAxisChartData);
@@ -220,7 +212,7 @@ function createChart(sourceData){
         .attr("transform", "rotate(-90)")
         .attr("y", 0 - _chartMargin.left + 15)
         .attr("x", 0 - (chartHeight / 2))
-        .attr("class", YAXISINACTIVECLASS)
+        .attr("class", getYlabelGroupClass("obesity"))
         .attr("id", "obesity")
         .text("Obese (%)")
         .on("click", updateYAxisChartData);
@@ -229,7 +221,7 @@ function createChart(sourceData){
     //- X: In Poverty
     svgAxisLabelGroup.append("text")
         .attr("transform", `translate(${chartWidth / 2}, ${chartHeight + _chartMargin.top - 28})`)
-        .attr("class", XAXISACTIVECLASS)
+        .attr("class", getXlabelGroupClass("poverty"))
         .attr("id", "poverty")
         .text("In Poverty (%)")
         .on("click", updateXAxisChartData);
@@ -237,7 +229,7 @@ function createChart(sourceData){
     //- X: Age
     svgAxisLabelGroup.append("text")
         .attr("transform", `translate(${chartWidth / 2}, ${chartHeight + _chartMargin.top - 8})`)
-        .attr("class", XAXISINACTIVECLASS)
+        .attr("class", getXlabelGroupClass("age"))
         .attr("id", "age")
         .text("Age (Median)")
         .on("click", updateXAxisChartData);
@@ -245,12 +237,48 @@ function createChart(sourceData){
     //- X: Income
     svgAxisLabelGroup.append("text")
         .attr("transform", `translate(${chartWidth / 2}, ${chartHeight + _chartMargin.top +12})`)
-        .attr("class", XAXISINACTIVECLASS)
+        .attr("class", getXlabelGroupClass("income"))
         .attr("id", "income")
         .text("Household Income (Median)")
         .on("click", updateXAxisChartData);
 
 }
+
+function  getXlabelGroupClass(labelID){
+    /* Returns the "class" to be used with the x axis label; determines if the label is current active based on the ID provided
+
+    Accept : labelID (string) unique identifier for the label group
+
+    Returns : (string) class information
+    */
+
+    if (labelID == _activeChart.xColumnName){
+        return XAXISACTIVECLASS;
+    }
+    else
+    {
+        return XAXISINACTIVECLASS;
+    }
+}
+
+function getYlabelGroupClass(labelID){
+    /* Returns the "class" to be used with the y axis label; determines if the label is current active based on the ID provided
+
+    Accept : labelID (string) unique identifier for the label group
+
+    Returns : (string) class information
+
+    */
+
+   if (labelID == _activeChart.yColumnName){
+        return YAXISACTIVECLASS;
+    }
+    else
+    {
+        return YAXISINACTIVECLASS;
+    }
+}
+
 
 function createToolTip(){
     /* Creates the d3.tip using metadata from the _activeChart
@@ -472,16 +500,6 @@ function updateYAxisChartData(){
 }
 
 
-// .on("mouseover", function(d) {
-        //     d3.select(this).attr("fill", "red");
-        //     toolTip.show(this);
-        // })
-
-        // .on("mouseover", toolTip.show)
-
-        // d3.select(".d3-tip").html(d => {return "scott";})
-/*
-
 // 1 Create Chart
 //  -> include labels that are clickable
 
@@ -489,14 +507,12 @@ function updateYAxisChartData(){
 //  -> based on click event, use transition
 //  - pass in object used with labels/x/y
 
-3 Update tool tip with the multiple axis
+// 3 Update tool tip with the multiple axis
 
-4 responsive
- - height
- - keep selected axis; not return to default
-*/
-
-
+// 4 responsive
+//  - height
+//  - keep selected axis; not return to default
+// */
 
 
 function makeResponsive(){
