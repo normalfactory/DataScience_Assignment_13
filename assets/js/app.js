@@ -80,7 +80,9 @@ function getTransitionDuration(){
 
 
 function createChart(sourceData){
-    /*
+    /* Creates the chart. Checks for existing chart, "svg", and if found it is removed and created again which is
+    to support the responsive layout. Uses globals to maintain the user selection of the filters in use before the 
+    recreation caused by the responsive layout.
 
     Accepts : sourceData (list, dictionary) contains the dataset, one element in the array for each state
 
@@ -500,21 +502,6 @@ function updateYAxisChartData(){
 }
 
 
-// 1 Create Chart
-//  -> include labels that are clickable
-
-// 2 Update Chart
-//  -> based on click event, use transition
-//  - pass in object used with labels/x/y
-
-// 3 Update tool tip with the multiple axis
-
-// 4 responsive
-//  - height
-//  - keep selected axis; not return to default
-// */
-
-
 function makeResponsive(){
     /* Method to be called when the browser is resized; redraws the chart to fit the new area.
     Determines if the current div that contains the chart has changed size and only updates the 
@@ -551,6 +538,8 @@ function makeResponsive(){
 
 //- Request Data
 d3.csv("assets/data/data.csv").then(function(chartData) {
+    /* Request data completed, convert to numeric values and create chart.
+    */
 
     console.log("--> d3.csv: Request completed for census data");
 
